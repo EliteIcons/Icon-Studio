@@ -1,24 +1,32 @@
 import { state, pushHistory } from './state';
 
+interface Point {
+  x: number;
+  y: number;
+}
+
 export function setupCanvas(
   previewOverlay: SVGSVGElement,
   coordsEl: HTMLElement,
   onCommit: () => void
 ) {
   let isDrawing = false;
-  let startPt: [number, number] =;
-  let penPoints: [number, number][] = [];
+  let startPt: Point = { x: 0, y: 0 };
+  let penPoints: Point[] = [];
 
-  function getGridPoint(e: PointerEvent): [number, number] {
+  function getGridPoint(e: PointerEvent): Point {
     const rect = previewOverlay.getBoundingClientRect();
     const x = Math.round(((e.clientX - rect.left) / rect.width) * 24);
     const y = Math.round(((e.clientY - rect.top) / rect.height) * 24);
-    return [Math.max(0, Math.min(24, x)), Math.max(0, Math.min(24, y))];
+    return {
+      x: Math.max(0, Math.min(24, x)),
+      y: Math.max(0, Math.min(24, y)),
+    };
   }
 
   previewOverlay.addEventListener('pointermove', (e) => {
-    const [x, y] = getGridPoint(e);
-    coordsEl.textContent = `GRID: ${x}, ${y} // SNAP: 1PX`;
+    const pt = getGridPoint(e);
+    coordsEl.textContent = `GRID: ${pt.x}, ${pt.y} // SNAP: 1PX`;
     if (!isDrawing) return;
 
     previewOverlay.setAttribute('stroke', state.color);
@@ -26,21 +34,21 @@ export function setupCanvas(
     previewOverlay.setAttribute('stroke-linecap', state.lineCap);
 
     if (state.tool === 'line') {
-      previewOverlay.innerHTML = `<line x1="${startPt[0]}" y1="${startPt[1]}" x2="${x}" y2="${y}" />`;
+      previewOverlay.innerHTML = `<line x1="${startPt.x}" y1="${startPt.y}" x2="${pt.x}" y2="${pt.y}" />`;
     } else if (state.tool === 'rect') {
-      const rx = Math.min(startPt[0], x);
-      const ry = Math.min(startPt[1], y);
-      const rw = Math.abs(x - startPt[0]);
-      const rh = Math.abs(y - startPt[1]);
+      const rx = Math.min(startPt.x, pt.x);
+      const ry = Math.min(startPt.y, pt.y);
+      const rw = Math.abs(pt.x - startPt.x);
+      const rh = Math.abs(pt.y - startPt.y);
       previewOverlay.innerHTML = `<rect x="${rx}" y="${ry}" width="${rw}" height="${rh}" rx="1" />`;
     } else if (state.tool === 'circle') {
-      const r = Math.max(1, Math.round(Math.hypot(x - startPt[0], y - startPt[1])));
-      previewOverlay.innerHTML = `<circle cx="${startPt[0]}" cy="${startPt[1]}" r="${r}" />`;
+      const r = Math.max(1, Math.round(Math.hypot(pt.x - startPt.x, pt.y - startPt.y)));
+      previewOverlay.innerHTML = `<circle cx="${startPt.x}" cy="${startPt.y}" r="${r}" />`;
     } else if (state.tool === 'pen') {
       const last = penPoints[penPoints.length - 1];
-      if (!last || last[0] !== x || last[1] !== y) {
-        penPoints.push([x, y]);
-        const d = penPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0]} ${p[1]}`).join(' ');
+      if (!last || last.x !== pt.x || last.y !== pt.y) {
+        penPoints.push(pt);
+        const d = penPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x} ${p.y}`).join(' ');
         previewOverlay.innerHTML = `<path d="${d}" />`;
       }
     }
