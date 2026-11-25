@@ -153,6 +153,20 @@ document.getElementById('btn-copy-svg')!.addEventListener('click', () => copySvg
 document.getElementById('btn-dl-svg')!.addEventListener('click', () => downloadSvgFile(showToast));
 document.getElementById('btn-dl-png')!.addEventListener('click', () => exportPngFile(512, showToast));
 
+// Shareable live studio link
+document.getElementById('btn-share-link')!.addEventListener('click', () => {
+  const params = new URLSearchParams();
+  params.set('svg', buildFullSvg(24));
+  params.set('color', state.color.replace('#', ''));
+  params.set('stroke', String(state.strokeWidth));
+  if (state.animation !== 'none') {
+    params.set('anim', state.animation);
+  }
+  const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+  navigator.clipboard.writeText(shareUrl);
+  showToast('COPIED SHAREABLE STUDIO LINK!');
+});
+
 // Import Modal
 const modal = document.getElementById('modal')!;
 document.getElementById('btn-import')!.addEventListener('click', () => modal.classList.remove('hidden'));
@@ -170,5 +184,29 @@ document.getElementById('btn-confirm-import')!.addEventListener('click', () => {
   }
   modal.classList.add('hidden');
 });
+
+// Load icon, color, stroke, and animation from URL if opened via a shared link
+const urlParams = new URLSearchParams(window.location.search);
+const incomingSvg = urlParams.get('svg');
+if (incomingSvg) {
+  state.innerSvg = incomingSvg.replace(/^<svg[^>]*>/i, '').replace(/<\/svg>$/i, '').trim();
+}
+const incomingColor = urlParams.get('color');
+if (incomingColor && /^[0-9a-fA-F]{6}$/.test(incomingColor)) {
+  state.color = `#${incomingColor}`;
+  (document.getElementById('inp-color') as HTMLInputElement).value = state.color;
+}
+const incomingStroke = Number(urlParams.get('stroke'));
+if (incomingStroke >= 1 && incomingStroke <= 3.5) {
+  state.strokeWidth = incomingStroke;
+  (document.getElementById('inp-stroke') as HTMLInputElement).value = String(incomingStroke);
+}
+const incomingAnim = urlParams.get('anim') as AnimationType | null;
+if (incomingAnim && ['none', 'spin', 'pulse', 'bounce', 'ping', 'wiggle'].includes(incomingAnim)) {
+  state.animation = incomingAnim;
+  document.querySelectorAll<HTMLButtonElement>('#anim-group button').forEach((b) => {
+    b.classList.toggle('active', b.dataset.anim === incomingAnim);
+  });
+}
 
 render();
