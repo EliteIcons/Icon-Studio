@@ -7,6 +7,7 @@ export const WORKBENCH_HTML = `
       </div>
       <div class="top-actions">
         <a href="https://eliteicons.github.io" class="nav-link">← BACK TO GALLERY</a>
+        <button id="btn-share-link" class="btn outline">SHARE LINK</button>
         <button id="btn-import" class="btn outline">PASTE / IMPORT SVG</button>
         <button id="btn-copy-svg" class="btn primary">COPY SVG</button>
         <button id="btn-dl-svg" class="btn outline">DOWNLOAD .SVG</button>
